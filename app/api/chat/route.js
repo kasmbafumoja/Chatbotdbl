@@ -12,9 +12,10 @@ export async function POST(req) {
       return NextResponse.json({ reply: "❌ GEMINI_API_KEY manquante" });
     }
 
-    // Appel API Gemini
+    const model = "gemini-2.5-pro"; // <-- modèle valide
+
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -25,11 +26,8 @@ export async function POST(req) {
     );
 
     const data = await response.json();
-
-    // DEBUG : renvoie la réponse brute pour voir ce que Gemini renvoie
     console.log("[Gemini Debug] data =", JSON.stringify(data, null, 2));
 
-    // Récupérer le texte si disponible
     const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!reply) {
