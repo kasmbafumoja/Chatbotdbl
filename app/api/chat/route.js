@@ -5,9 +5,8 @@ const client = new OpenAI({
 });
 
 export async function POST(req) {
-  const { message } = await req.json();
-
   try {
+    const { message } = await req.json();
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: message }]
