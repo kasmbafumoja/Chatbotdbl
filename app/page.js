@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useRef, useEffect } from "react";
 
 export default function Home() {
@@ -80,7 +79,7 @@ export default function Home() {
 
       <style jsx>{`
         :root { --c1:#7f00ff; --c2:#00e5ff; }
-        .bg { position:absolute; width:200%; height:200%; background:linear-gradient(120deg,var(--c1),var(--c2),var(--c1)); filter:blur(140px); opacity:0.25; animation: moveBg 25s infinite linear; z-index:-1; }
+        .bg { position:absolute; width:200%; height:200%; background:linear-gradient(120deg,var(--c1),var(--c2),var(--c1)); filter:blur(140px); opacity:0.3; animation: moveBg 25s infinite linear; z-index:-1; }
         @keyframes moveBg { 0%{transform:translate(-30%,-30%);}50%{transform:translate(-10%,-10%);}100%{transform:translate(-30%,-30%);} }
         .app { position:relative; height:100vh; display:flex; flex-direction:column; font-family:'Segoe UI',Arial,sans-serif; color:white; }
         .welcome { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
@@ -88,15 +87,15 @@ export default function Home() {
         .start-btn { margin-top:30px; padding:14px 34px; border:none; border-radius:30px; font-size:16px; cursor:pointer; background:linear-gradient(90deg,var(--c1),var(--c2)); color:white; }
         .chat { flex:1; display:flex; flex-direction:column; }
         .messages { flex:1; padding:20px; overflow-y:auto; }
-        .msg { max-width:82%; margin-bottom:14px; padding:14px 18px; border-radius:16px; line-height:1.4; }
+        .msg { max-width:82%; margin-bottom:14px; padding:14px 18px; border-radius:16px; line-height:1.4; background: rgba(255,255,255,0.12); } /* <-- fond léger transparent */
         .user { margin-left:auto; background:linear-gradient(90deg,#0066ff,#00ccff); border-bottom-right-radius:4px; }
-        .bot { margin-right:auto; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); backdrop-filter:blur(8px); border-bottom-left-radius:4px; }
+        .bot { margin-right:auto; background: rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.2); backdrop-filter:blur(6px); border-bottom-left-radius:4px; }
         .thinking { opacity:0.7; font-style:italic; }
-        .input { display:flex; padding:14px; background:rgba(0,0,0,0.45); backdrop-filter:blur(10px); }
-        .input input { flex:1; padding:13px 16px; border-radius:25px; border:none; outline:none; font-size:15px; }
+        .input { display:flex; padding:14px; background:rgba(255,255,255,0.05); backdrop-filter:blur(8px); border-top:1px solid rgba(255,255,255,0.1); }
+        .input input { flex:1; padding:13px 16px; border-radius:25px; border:none; outline:none; font-size:15px; background: rgba(255,255,255,0.1); color:white; }
         .input button { margin-left:10px; width:46px; height:46px; border-radius:50%; border:none; cursor:pointer; background:linear-gradient(90deg,var(--c1),var(--c2)); color:white; font-size:18px; }
         @media(max-width:480px){ .logo{font-size:36px;} .start-btn{padding:12px 28px;font-size:15px;} .msg{max-width:90%;padding:12px 14px;} .input input{font-size:14px;padding:12px;} .input button{width:40px;height:40px;font-size:16px;} }
       `}</style>
     </div>
   );
-}
+        }
