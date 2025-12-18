@@ -1,6 +1,6 @@
 export const metadata = {
   title: "AI Chat Bot",
-  description: "ChatGPT & Gemini assistant"
+  description: "ChatGPT & Gemini Assistant"
 };
 
 export default function RootLayout({ children }) {
