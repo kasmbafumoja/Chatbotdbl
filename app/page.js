@@ -21,8 +21,8 @@ export default function Home() {
       });
 
       const data = await res.json();
-      setReply(data.reply);
-    } catch (e) {
+      setReply(data.reply || "❌ Aucune réponse");
+    } catch {
       setReply("❌ Erreur de connexion");
     }
 
@@ -45,13 +45,13 @@ export default function Home() {
 
         <textarea
           style={styles.textarea}
-          placeholder="Écris ton message ici..."
+          placeholder="Écris ton message..."
           value={message}
           onChange={e => setMessage(e.target.value)}
         />
 
         <button style={styles.button} onClick={sendMessage}>
-          {loading ? "⏳ Réponse en cours..." : "Envoyer"}
+          {loading ? "⏳ Réponse..." : "Envoyer"}
         </button>
 
         {reply && (
@@ -76,7 +76,7 @@ const styles = {
   },
   card: {
     background: "#0d0d0d",
-    color: "#ffffff",
+    color: "#fff",
     width: "100%",
     maxWidth: 480,
     padding: 20,
@@ -85,13 +85,13 @@ const styles = {
   },
   title: {
     textAlign: "center",
-    marginBottom: 15
+    marginBottom: 10
   },
   select: {
     width: "100%",
     padding: 10,
-    marginBottom: 10,
     borderRadius: 8,
+    marginBottom: 10,
     border: "none"
   },
   textarea: {
