@@ -2,44 +2,58 @@ import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
-    const { message } = await req.json();
+    const { message, model } = await req.json();
 
-    if (!message || message.trim() === "") {
+    if (!message || !message.trim()) {
       return NextResponse.json({ reply: "❌ Message vide" });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json({ reply: "❌ GEMINI_API_KEY manquante" });
-    }
-
-    const model = "gemini-2.5-pro"; // <-- modèle valide
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
+    // ===== CHATGPT =====
+    if (model === "gpt") {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: message }] }]
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: message }]
         })
-      }
-    );
+      });
 
-    const data = await response.json();
-    console.log("[Gemini Debug] data =", JSON.stringify(data, null, 2));
+      const data = await res.json();
+      const reply = data?.choices?.[0]?.message?.content;
 
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!reply) {
       return NextResponse.json({
-        reply: "❌ Gemini n'a pas renvoyé de réponse. Voici la réponse brute : " + JSON.stringify(data)
+        reply: reply || "❌ ChatGPT n'a pas répondu"
       });
     }
 
-    return NextResponse.json({ reply });
+    // ===== GEMINI =====
+    if (model === "gemini") {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: message }] }]
+          })
+        }
+      );
 
-  } catch (err) {
-    console.error("[Gemini Error]", err);
-    return NextResponse.json({ reply: "❌ Erreur serveur : " + err.message });
+      const data = await res.json();
+      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      return NextResponse.json({
+        reply: reply || "❌ Gemini n'a pas répondu"
+      });
+    }
+
+    return NextResponse.json({ reply: "❌ Modèle inconnu" });
+
+  } catch {
+    return NextResponse.json({ reply: "❌ Erreur serveur" });
   }
 }
