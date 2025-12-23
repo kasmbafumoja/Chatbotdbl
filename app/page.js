@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 
 export default function Home() {
   const [messages, setMessages] = useState([
-    { role: "assistant", text: "Bonjour ! Je suis Kas Termux 🤖. Comment puis-je t'aider aujourd'hui ?", isTyping: false }
+    { role: "assistant", text: "Kas Termux prêt. 🤖\nPose-moi tes questions.", isTyping: false }
   ]);
   const [input, setInput] = useState("");
   const [chatVisible, setChatVisible] = useState(false);
@@ -11,13 +11,17 @@ export default function Home() {
   const messagesEndRef = useRef(null);
 
   const startChat = () => setChatVisible(true);
-  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages, isBotThinking]);
 
-  // Effet d'écriture progressive mot par mot (Style Gemini)
   const typeText = async (fullText) => {
     let currentText = "";
     const words = fullText.split(" ");
@@ -29,7 +33,7 @@ export default function Home() {
         const lastMsg = prev[prev.length - 1];
         return [...prev.slice(0, -1), { ...lastMsg, text: currentText }];
       });
-      await new Promise(res => setTimeout(res, 25)); // Vitesse fluide
+      await new Promise(res => setTimeout(res, 20));
     }
     setMessages(prev => {
       const lastMsg = prev[prev.length - 1];
@@ -39,138 +43,105 @@ export default function Home() {
 
   const sendMessage = async () => {
     if (!input.trim() || isBotThinking) return;
-
     const userMsg = { role: "user", text: input };
     setMessages(prev => [...prev, userMsg]);
     setInput("");
     setIsBotThinking(true);
 
     try {
-      const apiHistory = [...messages, userMsg].map(m => ({
-        role: m.role,
-        content: m.text
-      }));
-
+      const apiHistory = [...messages, userMsg].map(m => ({ role: m.role, content: m.text }));
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: apiHistory })
       });
-      
       const data = await res.json();
       setIsBotThinking(false);
       await typeText(data.text);
     } catch (err) {
       setIsBotThinking(false);
-      setMessages(prev => [...prev, { role: "assistant", text: "❌ Erreur de connexion au serveur." }]);
+      setMessages(prev => [...prev, { role: "assistant", text: "⚠️ Erreur de connexion." }]);
     }
   };
 
-  const handleKey = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
-
   return (
-    <div className="gemini-app">
+    <div className="app-container">
       {!chatVisible ? (
-        <div className="welcome-screen">
-          <h1 className="gemini-logo">Kas Termux</h1>
-          <button className="start-chat-btn" onClick={startChat}>Commencer l'expérience</button>
+        <div className="splash fade-in">
+          <div className="logo-box">🤖</div>
+          <h1>Kas Termux</h1>
+          <button className="btn-start" onClick={startChat}>Lancer l'App</button>
         </div>
       ) : (
-        <div className="chat-layout">
-          {/* Zone des messages qui défile */}
-          <div className="scroll-area">
-            <div className="content-container">
-              {messages.map((m, i) => (
-                <div key={i} className={`gemini-row ${m.role}`}>
-                  <div className="gemini-avatar">{m.role === 'user' ? '👤' : '🤖'}</div>
-                  <div className="gemini-text">
-                    <div className="message-bubble">
-                      {m.text.split("\n").map((line, idx) => (
-                        <p key={idx}>{line}</p>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              {isBotThinking && (
-                <div className="gemini-row assistant">
-                  <div className="gemini-avatar pulse-avatar">🤖</div>
-                  <div className="gemini-text">
-                    <div className="gemini-loader">
-                      <span></span><span></span><span></span>
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          </div>
+        <div className="mobile-chat">
+          <header className="header">
+            <span>Kas Termux</span>
+            <div className="online-dot"></div>
+          </header>
 
-          {/* Barre de saisie immobile en bas (Exactement comme Gemini) */}
-          <div className="input-fixed-container">
-            <div className="input-inner">
-              <div className="input-pill">
-                <textarea
-                  rows="1"
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  placeholder="Écrivez ici..."
-                  onKeyDown={handleKey}
-                />
-                <button className="send-icon" onClick={sendMessage} disabled={isBotThinking || !input.trim()}>
-                  ➤
-                </button>
+          <main className="chat-area">
+            {messages.map((m, i) => (
+              <div key={i} className={`row ${m.role}`}>
+                <div className="avatar">{m.role === 'user' ? '👤' : '🤖'}</div>
+                <div className="text-zone">{m.text}</div>
               </div>
-              <p className="disclaimer">Kas Termux peut faire des erreurs. Vérifiez les informations importantes.</p>
+            ))}
+            {isBotThinking && (
+              <div className="row assistant">
+                <div className="avatar">🤖</div>
+                <div className="loading-dots"><span></span><span></span><span></span></div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </main>
+
+          <footer className="footer">
+            <div className="input-pill">
+              <input 
+                type="text"
+                value={input} 
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                placeholder="Message..."
+              />
+              <button onClick={sendMessage} disabled={!input.trim()}>➤</button>
             </div>
-          </div>
+          </footer>
         </div>
       )}
 
       <style jsx>{`
-        .gemini-app { height: 100dvh; background: #ffffff; color: #1f1f1f; font-family: 'Google Sans', Arial, sans-serif; display: flex; flex-direction: column; }
+        .app-container { height: 100dvh; background: #ffffff; color: #202124; overflow: hidden; font-family: sans-serif; }
         
-        /* Accueil */
-        .welcome-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #f8f9ff 0%, #ffffff 100%); }
-        .gemini-logo { font-size: 3rem; font-weight: 500; background: linear-gradient(90deg, #4285f4, #9b72cb, #d96570); -webkit-background-clip: text; color: transparent; margin-bottom: 30px; }
-        .start-chat-btn { padding: 12px 24px; border-radius: 20px; border: 1px solid #dadce0; background: white; cursor: pointer; font-size: 1rem; transition: 0.2s; }
-        .start-chat-btn:hover { background: #f8f9ff; border-color: #4285f4; color: #4285f4; }
+        /* Splash Screen */
+        .splash { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+        .logo-box { font-size: 80px; }
+        .btn-start { background: #1a73e8; color: white; border: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; }
 
-        /* Layout Chat */
-        .chat-layout { display: flex; flex-direction: column; height: 100%; position: relative; }
-        .scroll-area { flex: 1; overflow-y: auto; padding-top: 20px; padding-bottom: 180px; scrollbar-width: none; }
-        .scroll-area::-webkit-scrollbar { display: none; }
-        .content-container { max-width: 800px; margin: 0 auto; width: 100%; padding: 0 20px; }
+        /* Interface Gemini Mobile */
+        .mobile-chat { display: flex; flex-direction: column; height: 100%; }
+        .header { height: 60px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #f1f3f4; font-weight: bold; gap: 8px; }
+        .online-dot { width: 8px; height: 8px; background: #34a853; border-radius: 50%; }
 
-        /* Lignes de messages */
-        .gemini-row { display: flex; gap: 20px; margin-bottom: 40px; animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .gemini-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; background: #f0f2f5; flex-shrink: 0; }
-        .pulse-avatar { animation: avatarBreath 2s infinite ease-in-out; }
-        @keyframes avatarBreath { 0%, 100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.1); opacity: 1; } }
+        .chat-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 30px; }
+        .row { display: flex; gap: 15px; width: 100%; }
+        .row.user { flex-direction: row-reverse; }
+        .avatar { width: 35px; height: 35px; background: #f8f9fa; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .text-zone { flex: 1; line-height: 1.6; white-space: pre-wrap; font-size: 16px; }
+        .user .text-zone { background: #f1f3f4; padding: 10px 15px; border-radius: 18px; max-width: 80%; flex: none; }
 
-        .gemini-text { flex: 1; display: flex; flex-direction: column; }
-        .message-bubble { line-height: 1.6; font-size: 1.05rem; }
-        .user .message-bubble { background: #f0f2f5; padding: 12px 20px; border-radius: 18px; align-self: flex-end; max-width: 80%; }
-        .assistant .message-bubble { background: transparent; color: #1f1f1f; }
+        .footer { padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
+        .input-pill { background: #f1f3f4; border-radius: 30px; display: flex; align-items: center; padding: 5px 15px; }
+        input { flex: 1; background: transparent; border: none; outline: none; height: 45px; font-size: 16px; }
+        button { background: none; border: none; color: #1a73e8; font-size: 22px; cursor: pointer; }
+        button:disabled { color: #bdc1c6; }
 
-        /* Zone de saisie fixe (Style Gemini) */
-        .input-fixed-container { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, white 70%, transparent); padding: 20px 0 30px 0; }
-        .input-inner { max-width: 800px; margin: 0 auto; padding: 0 20px; }
-        .input-pill { background: #f0f2f5; border-radius: 32px; padding: 10px 20px; display: flex; align-items: center; gap: 10px; transition: 0.2s; border: 1px solid transparent; }
-        .input-pill:focus-within { background: white; border-color: #dadce0; box-shadow: 0 1px 6px rgba(32,33,36,.28); }
-        
-        textarea { flex: 1; background: transparent; border: none; outline: none; resize: none; font-size: 1rem; color: #1f1f1f; font-family: inherit; padding: 10px 0; }
-        .send-icon { background: none; border: none; color: #4285f4; cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; }
-        .send-icon:disabled { color: #c4c7c5; cursor: not-allowed; }
-        
-        .disclaimer { font-size: 0.75rem; text-align: center; color: #70757a; margin-top: 15px; }
-
-        @media (max-width: 600px) { .gemini-row { gap: 10px; } .gemini-avatar { width: 32px; height: 32px; font-size: 1rem; } }
+        .loading-dots { display: flex; gap: 4px; padding: 10px; }
+        .loading-dots span { width: 6px; height: 6px; background: #1a73e8; border-radius: 50%; animation: blink 1.4s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+        .fade-in { animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
     </div>
   );
 }
-
