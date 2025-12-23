@@ -6,10 +6,18 @@ const client = new OpenAI({
 
 export async function POST(req) {
   try {
-    const { message } = await req.json();
+    // On récupère maintenant 'messages' au lieu de juste 'message'
+    const { messages } = await req.json();
+
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [{ role: "user", content: message }]
+      messages: [
+        { 
+          role: "system", 
+          content: "Tu es Kas Universe, un assistant IA humain, intelligent, calme et bienveillant. Tu parles comme un ami proche." 
+        },
+        ...messages // On transmet tout l'historique à OpenAI
+      ]
     });
 
     return new Response(JSON.stringify({ text: completion.choices[0].message.content }), {
