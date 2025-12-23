@@ -6,7 +6,7 @@ const client = new OpenAI({
 
 export async function POST(req) {
   try {
-    // On récupère maintenant 'messages' au lieu de juste 'message'
+    // On récupère l'historique envoyé par le frontend
     const { messages } = await req.json();
 
     const completion = await client.chat.completions.create({
@@ -14,9 +14,9 @@ export async function POST(req) {
       messages: [
         { 
           role: "system", 
-          content: "Tu es Kas Universe, un assistant IA humain, intelligent, calme et bienveillant. Tu parles comme un ami proche." 
+          content: "Tu es Kas Universe, un assistant IA humain, intelligent, calme et bienveillant. Tu aides l'utilisateur comme un ami proche." 
         },
-        ...messages // On transmet tout l'historique à OpenAI
+        ...messages // Transmission de tout l'historique à l'IA
       ]
     });
 
@@ -24,8 +24,9 @@ export async function POST(req) {
       headers: { "Content-Type": "application/json" }
     });
   } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify({ text: "❌ Impossible de répondre." }), {
+    console.error("Erreur API OpenAI:", err);
+    return new Response(JSON.stringify({ text: "❌ Impossible de répondre. Vérifie ta clé API sur Vercel." }), {
+      status: 500,
       headers: { "Content-Type": "application/json" }
     });
   }
