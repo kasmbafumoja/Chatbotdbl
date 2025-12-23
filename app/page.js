@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 
 export default function Home() {
   const [messages, setMessages] = useState([
-    { role: "assistant", text: "👋 Bonjour, je suis Kas Universe. Comment puis-je t'accompagner aujourd'hui ?", isTyping: false }
+    { role: "assistant", text: "Bonjour ! Je suis Kas Universe 🤖. Prêt pour une discussion haute en couleurs ?", isTyping: false }
   ]);
   const [input, setInput] = useState("");
   const [chatVisible, setChatVisible] = useState(false);
@@ -11,22 +11,17 @@ export default function Home() {
   const messagesEndRef = useRef(null);
 
   const startChat = () => setChatVisible(true);
-  
-  // Fonction de scroll optimisée
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 
   useEffect(() => {
     scrollToBottom();
   }, [messages, isBotThinking]);
 
-  // Fonction pour simuler l'effet d'écriture mot par mot (Style Gemini)
+  // Simulation d'écriture progressive (Style Gemini)
   const typeText = async (fullText) => {
     let currentText = "";
     const words = fullText.split(" ");
     
-    // On crée une nouvelle bulle vide pour le bot
     setMessages(prev => [...prev.slice(0, -1), { role: "assistant", text: "", isTyping: true }]);
 
     for (let i = 0; i < words.length; i++) {
@@ -35,11 +30,9 @@ export default function Home() {
         const lastMsg = prev[prev.length - 1];
         return [...prev.slice(0, -1), { ...lastMsg, text: currentText }];
       });
-      // Vitesse d'écriture (ajustable ici : 30ms par mot)
-      await new Promise(res => setTimeout(res, 30));
+      await new Promise(res => setTimeout(res, 40)); // Vitesse d'écriture
     }
     
-    // On marque l'écriture comme terminée
     setMessages(prev => {
       const lastMsg = prev[prev.length - 1];
       return [...prev.slice(0, -1), { ...lastMsg, isTyping: false }];
@@ -68,13 +61,11 @@ export default function Home() {
       
       const data = await res.json();
       setIsBotThinking(false);
-      
-      // On lance l'effet d'écriture type Gemini
       await typeText(data.text);
 
     } catch (err) {
       setIsBotThinking(false);
-      setMessages(prev => [...prev, { role: "assistant", text: "❌ Erreur de connexion." }]);
+      setMessages(prev => [...prev, { role: "assistant", text: "❌ Oups ! Mon système a eu un petit bug." }]);
     }
   };
 
@@ -82,52 +73,54 @@ export default function Home() {
 
   return (
     <div className="app">
-      <div className="bg"></div>
+      <div className="animated-bg"></div>
 
       {!chatVisible ? (
         <div className="welcome fade-in">
-          <div className="logo-container">
-            <h1 className="logo">🌌 KAS UNIVERSE</h1>
-            <div className="logo-glow"></div>
-          </div>
-          <p className="tagline">L'IA qui vous comprend vraiment.</p>
-          <button className="start-btn" onClick={startChat}>Commencer</button>
+          <h1 className="hero-title">🌌 KAS UNIVERSE</h1>
+          <p className="hero-subtitle">L'intelligence artificielle aux couleurs de l'infini.</p>
+          <button className="glow-button" onClick={startChat}>Lancer la connexion</button>
         </div>
       ) : (
-        <div className="chat-container fade-in">
-          <div className="messages-area">
+        <div className="chat-interface fade-in">
+          <div className="messages-scroll">
             {messages.map((m, i) => (
-              <div key={i} className={`msg-row ${m.role}`}>
-                <div className="avatar">{m.role === 'user' ? '👤' : '🌌'}</div>
-                <div className="msg-content">
+              <div key={i} className={`message-row ${m.role}`}>
+                <div className="avatar-circle">
+                  {m.role === 'user' ? '👤' : '🤖'}
+                </div>
+                <div className="message-content">
+                  <span className="sender-name">{m.role === 'user' ? 'Vous' : 'Kas Universe'}</span>
                   <div className="bubble">
-                    {m.text.split("\n").map((line, idx) => <p key={idx}>{line}</p>)}
+                    {m.text.split("\n").map((line, idx) => (
+                      <p key={idx} className={m.role === 'assistant' ? 'rainbow-text' : ''}>{line}</p>
+                    ))}
                   </div>
                 </div>
               </div>
             ))}
             
             {isBotThinking && (
-              <div className="msg-row assistant">
-                <div className="avatar animate-spin">🌌</div>
-                <div className="bubble thinking">
-                  <span className="dot"></span><span className="dot"></span><span className="dot"></span>
+              <div className="message-row assistant">
+                <div className="avatar-circle pulse">🤖</div>
+                <div className="bubble thinking-bubble">
+                  <div className="loader-dots"><span></span><span></span><span></span></div>
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="input-area">
-            <div className="input-wrapper">
+          <div className="bottom-bar">
+            <div className="input-box">
               <input
                 value={input}
                 onChange={e => setInput(e.target.value)}
-                placeholder="Demandez n'importe quoi..."
+                placeholder="Écrivez votre message..."
                 onKeyDown={handleKey}
               />
               <button className="send-btn" onClick={sendMessage} disabled={isBotThinking}>
-                {isBotThinking ? "..." : "➤"}
+                {isBotThinking ? '...' : '➤'}
               </button>
             </div>
           </div>
@@ -135,48 +128,61 @@ export default function Home() {
       )}
 
       <style jsx>{`
-        .app { height: 100dvh; background: #0a0a0c; color: #e4e4e7; font-family: 'Inter', system-ui, sans-serif; overflow: hidden; position: relative; }
-        .bg { position: absolute; inset: 0; background: radial-gradient(circle at 50% -20%, #3b0a64 0%, transparent 50%), radial-gradient(circle at 0% 100%, #0f172a 0%, transparent 40%); z-index: 0; opacity: 0.6; }
+        .app { height: 100dvh; background: #050508; color: #fff; font-family: 'Poppins', sans-serif; overflow: hidden; position: relative; }
         
-        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Arrière-plan animé */
+        .animated-bg { position: absolute; inset: 0; background: 
+          radial-gradient(circle at 20% 30%, #4f46e5 0%, transparent 40%),
+          radial-gradient(circle at 80% 70%, #9333ea 0%, transparent 40%);
+          filter: blur(80px); opacity: 0.4; animation: pulseBg 10s infinite alternate; }
+        @keyframes pulseBg { from { opacity: 0.3; } to { opacity: 0.6; } }
 
-        /* Welcome */
-        .welcome { position: relative; z-index: 10; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
-        .logo { font-size: 3rem; font-weight: 800; letter-spacing: -2px; background: linear-gradient(to right, #fff, #9333ea); -webkit-background-clip: text; color: transparent; margin: 0; }
-        .tagline { opacity: 0.6; font-size: 1.1rem; }
-        .start-btn { padding: 12px 32px; border-radius: 99px; border: none; background: #9333ea; color: white; font-weight: 600; cursor: pointer; transition: 0.3s; }
-        .start-btn:hover { background: #a855f7; transform: scale(1.05); }
+        .fade-in { animation: fadeIn 0.6s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Chat Layout (Stable like Gemini) */
-        .chat-container { position: relative; z-index: 10; height: 100%; max-width: 850px; margin: 0 auto; display: flex; flex-direction: column; }
-        .messages-area { flex: 1; overflow-y: auto; padding: 40px 20px; display: flex; flex-direction: column; gap: 32px; scrollbar-width: none; }
-        .messages-area::-webkit-scrollbar { display: none; }
+        /* Welcome Screen */
+        .welcome { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; position: relative; text-align: center; padding: 20px; }
+        .hero-title { font-size: 3.5rem; font-weight: 900; background: linear-gradient(90deg, #fff, #00d2ff, #9d50bb); -webkit-background-clip: text; color: transparent; margin-bottom: 10px; }
+        .glow-button { padding: 15px 40px; border-radius: 50px; border: none; background: #fff; color: #000; font-weight: bold; cursor: pointer; box-shadow: 0 0 20px rgba(255,255,255,0.4); transition: 0.3s; }
+        .glow-button:hover { transform: scale(1.1); box-shadow: 0 0 30px rgba(157, 80, 187, 0.6); }
 
-        .msg-row { display: flex; gap: 16px; width: 100%; }
-        .msg-row.user { flex-direction: row-reverse; }
-        .avatar { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-        
-        .bubble { max-width: 85%; line-height: 1.6; font-size: 1rem; }
-        .user .bubble { background: #27272a; padding: 12px 20px; border-radius: 20px 20px 4px 20px; color: #fff; }
-        .assistant .bubble { background: transparent; padding: 0; color: #d1d5db; }
+        /* Chat Layout */
+        .chat-interface { height: 100%; max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; position: relative; z-index: 10; }
+        .messages-scroll { flex: 1; overflow-y: auto; padding: 30px 20px; display: flex; flex-direction: column; gap: 25px; scrollbar-width: none; }
+        .messages-scroll::-webkit-scrollbar { display: none; }
 
-        /* Thinking animation */
-        .thinking { display: flex; gap: 4px; padding-top: 10px; }
-        .dot { width: 6px; height: 6px; background: #9333ea; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out; }
-        .dot:nth-child(2) { animation-delay: 0.2s; }
-        .dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-8px); } }
+        .message-row { display: flex; gap: 12px; max-width: 85%; }
+        .message-row.user { align-self: flex-end; flex-direction: row-reverse; }
+        .message-row.assistant { align-self: flex-start; }
+
+        .avatar-circle { width: 40px; height: 40px; background: #1f1f23; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border: 1px solid rgba(255,255,255,0.1); }
+        .pulse { animation: avatarPulse 2s infinite; }
+        @keyframes avatarPulse { 0% { box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(147, 51, 234, 0); } 100% { box-shadow: 0 0 0 0 rgba(147, 51, 234, 0); } }
+
+        .sender-name { font-size: 0.75rem; opacity: 0.5; margin-bottom: 4px; display: block; margin-left: 12px; }
+        .user .sender-name { margin-left: 0; margin-right: 12px; text-align: right; }
+
+        .bubble { padding: 12px 18px; border-radius: 20px; line-height: 1.5; font-size: 0.95rem; }
+        .user .bubble { background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; border-bottom-right-radius: 4px; }
+        .assistant .bubble { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-bottom-left-radius: 4px; }
+
+        /* Texte multicolore pour le bot */
+        .rainbow-text { background: linear-gradient(to right, #e0e0e0, #a5f3fc, #c4b5fd); -webkit-background-clip: text; color: transparent; display: inline; }
+
+        /* Loader */
+        .loader-dots { display: flex; gap: 4px; padding: 10px; }
+        .loader-dots span { width: 8px; height: 8px; background: #9333ea; border-radius: 50%; animation: dotAnim 1.4s infinite; }
+        .loader-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loader-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dotAnim { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
 
         /* Input Area */
-        .input-area { padding: 20px; background: linear-gradient(to top, #0a0a0c 80%, transparent); }
-        .input-wrapper { background: #18181b; border: 1px solid #27272a; border-radius: 28px; display: flex; align-items: center; padding: 6px 6px 6px 20px; transition: 0.2s; }
-        .input-wrapper:focus-within { border-color: #9333ea; box-shadow: 0 0 0 1px #9333ea; }
-        input { flex: 1; background: transparent; border: none; color: white; outline: none; font-size: 1rem; height: 44px; }
-        .send-btn { width: 40px; height: 40px; border-radius: 50%; border: none; background: #9333ea; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .send-btn:disabled { background: #3f3f46; cursor: not-allowed; }
-
-        @media (max-width: 640px) { .logo { font-size: 2rem; } .bubble { max-width: 90%; } }
+        .bottom-bar { padding: 20px; background: linear-gradient(transparent, #050508); }
+        .input-box { background: #111114; border: 1px solid rgba(255,255,255,0.1); border-radius: 30px; display: flex; align-items: center; padding: 8px 10px 8px 20px; }
+        input { flex: 1; background: transparent; border: none; color: #fff; outline: none; height: 45px; }
+        .send-btn { width: 45px; height: 45px; border-radius: 50%; border: none; background: #fff; color: #000; cursor: pointer; transition: 0.2s; font-weight: bold; }
+        .send-btn:hover { transform: rotate(-15deg) scale(1.1); background: #00d2ff; }
+        .send-btn:disabled { background: #333; color: #666; cursor: not-allowed; }
       `}</style>
     </div>
   );
