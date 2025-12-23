@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 
 export default function Home() {
   const [messages, setMessages] = useState([
-    { role: "assistant", text: "👋 Salut, je suis prêt à t'aider." }
+    { role: "assistant", text: "👋 Salut, je suis Kas Universe. Comment puis-je t'aider aujourd'hui ?" }
   ]);
   const [input, setInput] = useState("");
   const [chatVisible, setChatVisible] = useState(false);
@@ -18,16 +18,14 @@ export default function Home() {
     if (!input.trim()) return;
 
     const userMsg = { role: "user", text: input };
-    const botPlaceholder = { role: "assistant", text: "⏳ Je réfléchis…", thinking: true };
+    const botPlaceholder = { role: "assistant", text: "", thinking: true };
 
-    // Mise à jour locale de l'affichage
     const updatedMessages = [...messages, userMsg];
     setMessages([...updatedMessages, botPlaceholder]);
     setInput("");
 
     try {
-      // Transformation des messages au format attendu par OpenAI (role + content)
-      const historyForAPI = updatedMessages.map(m => ({
+      const apiHistory = updatedMessages.map(m => ({
         role: m.role,
         content: m.text
       }));
@@ -35,18 +33,17 @@ export default function Home() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: historyForAPI })
+        body: JSON.stringify({ messages: apiHistory })
       });
       
       const data = await res.json();
 
-      // Remplacement du message de chargement par la vraie réponse
       setMessages(prev => prev.map((m, i) =>
-        i === prev.length - 1 ? { role: "assistant", text: data.text } : m
+        i === prev.length - 1 ? { role: "assistant", text: data.text, thinking: false } : m
       ));
     } catch (err) {
       setMessages(prev => prev.map((m, i) =>
-        i === prev.length - 1 ? { role: "assistant", text: "❌ Erreur de connexion au serveur." } : m
+        i === prev.length - 1 ? { role: "assistant", text: "❌ Désolé, une erreur est survenue.", thinking: false } : m
       ));
     }
   };
@@ -58,52 +55,107 @@ export default function Home() {
       <div className="bg"></div>
 
       {!chatVisible ? (
-        <div className="welcome">
-          <div className="logo">🌌 KAS UNIVERSE</div>
-          <p>Un assistant IA humain.<br />Intelligent, calme, et toujours là pour toi.</p>
-          <button className="start-btn" onClick={startChat}>Commencer</button>
+        <div className="welcome fade-in">
+          <div className="logo-container">
+            <div className="logo">🌌 KAS UNIVERSE</div>
+            <div className="logo-glow"></div>
+          </div>
+          <p className="description">
+            Un assistant IA humain.<br />
+            <span>Intelligent, calme, et toujours là pour toi.</span>
+          </p>
+          <button className="start-btn" onClick={startChat}>
+            Commencer l'expérience
+          </button>
         </div>
       ) : (
-        <div className="chat">
+        <div className="chat fade-in">
+          <header className="chat-header">
+            <span>● Kas Universe Online</span>
+          </header>
+          
           <div className="messages">
-            {messages.map((m,i)=>(
-              <div key={i} className={`msg ${m.role} ${m.thinking ? "thinking" : ""}`}>
-                {m.text.split("\n").map((line, idx) => <p key={idx}>{line}</p>)}
+            {messages.map((m, i) => (
+              <div key={i} className={`msg-wrapper ${m.role}`}>
+                <div className={`msg ${m.thinking ? "thinking-bubble" : ""}`}>
+                  {m.thinking ? (
+                    <div className="typing-dots">
+                      <span></span><span></span><span></span>
+                    </div>
+                  ) : (
+                    m.text.split("\n").map((line, idx) => <p key={idx}>{line}</p>)
+                  )}
+                </div>
               </div>
             ))}
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="input">
-            <input
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              placeholder="Écris ici…"
-              onKeyDown={handleKey}
-            />
-            <button onClick={sendMessage}>➤</button>
+          <div className="input-container">
+            <div className="input-glass">
+              <input
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                placeholder="Pose-moi une question..."
+                onKeyDown={handleKey}
+              />
+              <button className="send-btn" onClick={sendMessage}>➤</button>
+            </div>
           </div>
         </div>
       )}
 
       <style jsx>{`
-        :root { --c1:#7f00ff; --c2:#00e5ff; }
-        .bg { position:absolute; width:200%; height:200%; background:linear-gradient(120deg,var(--c1),var(--c2),var(--c1)); filter:blur(140px); opacity:0.3; animation: moveBg 25s infinite linear; z-index:-1; }
-        @keyframes moveBg { 0%{transform:translate(-30%,-30%);} 50%{transform:translate(-10%,-10%);} 100%{transform:translate(-30%,-30%);} }
-        .app { position:relative; height:100vh; display:flex; flex-direction:column; font-family:'Segoe UI',Arial,sans-serif; color:white; overflow:hidden; }
-        .welcome { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
-        .logo { font-size:44px; font-weight:bold; background:linear-gradient(90deg,var(--c1),var(--c2)); -webkit-background-clip:text; color:transparent; }
-        .start-btn { margin-top:30px; padding:14px 34px; border:none; border-radius:30px; font-size:16px; cursor:pointer; background:linear-gradient(90deg,var(--c1),var(--c2)); color:white; }
-        .chat { flex:1; display:flex; flex-direction:column; max-width:800px; margin:0 auto; width:100%; }
-        .messages { flex:1; padding:20px; overflow-y:auto; }
-        .msg { max-width:82%; margin-bottom:14px; padding:14px 18px; border-radius:16px; line-height:1.4; background: rgba(255,255,255,0.12); }
-        .user { margin-left:auto; background:linear-gradient(90deg,#0066ff,#00ccff); border-bottom-right-radius:4px; }
-        .assistant { margin-right:auto; background: rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.2); backdrop-filter:blur(6px); border-bottom-left-radius:4px; }
-        .thinking { opacity:0.7; font-style:italic; }
-        .input { display:flex; padding:20px; background:rgba(0,0,0,0.2); backdrop-filter:blur(10px); border-top:1px solid rgba(255,255,255,0.1); }
-        .input input { flex:1; padding:13px 20px; border-radius:25px; border:none; outline:none; font-size:15px; background: rgba(255,255,255,0.15); color:white; }
-        .input button { margin-left:10px; width:46px; height:46px; border-radius:50%; border:none; cursor:pointer; background:linear-gradient(90deg,var(--c1),var(--c2)); color:white; font-size:18px; }
-        @media(max-width:480px){ .logo{font-size:36px;} .msg{max-width:90%;} }
+        :root { --c1:#7f00ff; --c2:#00e5ff; --glass: rgba(255, 255, 255, 0.1); }
+        
+        .app { position:relative; height: 100dvh; display:flex; flex-direction:column; font-family:'Inter', sans-serif; color:white; overflow:hidden; background: #050505; }
+        
+        .bg { position:absolute; width:150%; height:150%; background: radial-gradient(circle, var(--c1) 0%, transparent 50%), radial-gradient(circle, var(--c2) 0%, transparent 50%); filter:blur(100px); opacity:0.2; animation: moveBg 20s infinite alternate; z-index:0; }
+        @keyframes moveBg { 0%{transform:translate(-25%,-25%);} 100%{transform:translate(10%,10%);} }
+
+        .fade-in { animation: fadeIn 0.8s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Welcome Screen --- */
+        .welcome { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; z-index:1; padding: 20px; }
+        .logo-container { position: relative; margin-bottom: 20px; }
+        .logo { font-size: 56px; font-weight: 900; background: linear-gradient(90deg, #fff, var(--c2)); -webkit-background-clip: text; color: transparent; letter-spacing: -2px; }
+        .logo-glow { position: absolute; top:0; left:0; width:100%; height:100%; background: var(--c2); filter: blur(40px); opacity: 0.3; z-index: -1; }
+        .description { font-size: 18px; opacity: 0.8; line-height: 1.6; }
+        .description span { font-size: 14px; opacity: 0.6; }
+        .start-btn { margin-top: 40px; padding: 16px 40px; border: none; border-radius: 40px; background: white; color: black; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,229,255,0.3); }
+        .start-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(0,229,255,0.5); }
+
+        /* --- Chat UI --- */
+        .chat { flex:1; display:flex; flex-direction:column; z-index:1; max-width: 900px; margin: 0 auto; width: 100%; }
+        .chat-header { padding: 15px; text-align: center; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.5; }
+        .messages { flex:1; padding: 20px; overflow-y:auto; display: flex; flex-direction: column; gap: 10px; }
+        
+        .msg-wrapper { display: flex; width: 100%; animation: msgSlide 0.3s ease-out; }
+        @keyframes msgSlide { from { opacity:0; transform: translateY(5px); } to { opacity:1; transform: translateY(0); } }
+        
+        .user { justify-content: flex-end; }
+        .assistant { justify-content: flex-start; }
+
+        .msg { max-width: 75%; padding: 14px 20px; border-radius: 20px; font-size: 15px; line-height: 1.5; position: relative; }
+        .user .msg { background: linear-gradient(135deg, var(--c1), #4e00ff); border-bottom-right-radius: 4px; box-shadow: 0 4px 15px rgba(127,0,255,0.2); }
+        .assistant .msg { background: var(--glass); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-bottom-left-radius: 4px; }
+
+        /* --- Typing Animation --- */
+        .typing-dots { display: flex; gap: 5px; padding: 5px 0; }
+        .typing-dots span { width: 8px; height: 8px; background: rgba(255,255,255,0.5); border-radius: 50%; animation: pulse 1.4s infinite ease-in-out both; }
+        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes pulse { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+
+        /* --- Input --- */
+        .input-container { padding: 25px; }
+        .input-glass { display: flex; align-items: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px); padding: 8px 10px 8px 20px; border-radius: 50px; }
+        .input-glass input { flex:1; background: transparent; border: none; color: white; outline: none; font-size: 15px; }
+        .send-btn { width: 42px; height: 42px; border-radius: 50%; border: none; background: white; color: black; cursor: pointer; transition: 0.2s; font-size: 18px; }
+        .send-btn:hover { transform: scale(1.05); background: var(--c2); }
+
+        @media(max-width:480px){ .logo{font-size:38px;} .msg{max-width:85%;} .input-container{padding: 15px;} }
       `}</style>
     </div>
   );
