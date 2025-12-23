@@ -20,14 +20,14 @@ export default function Home() {
     const userMsg = { role: "user", text: input };
     const botPlaceholder = { role: "assistant", text: "⏳ Je réfléchis…", thinking: true };
 
-    // On ajoute le message utilisateur et l'état de réflexion
-    const newMessages = [...messages, userMsg];
-    setMessages([...newMessages, botPlaceholder]);
+    // Mise à jour locale de l'affichage
+    const updatedMessages = [...messages, userMsg];
+    setMessages([...updatedMessages, botPlaceholder]);
     setInput("");
 
     try {
-      // On prépare l'historique pour l'API (format attendu par OpenAI)
-      const apiHistory = newMessages.map(m => ({
+      // Transformation des messages au format attendu par OpenAI (role + content)
+      const historyForAPI = updatedMessages.map(m => ({
         role: m.role,
         content: m.text
       }));
@@ -35,17 +35,18 @@ export default function Home() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: apiHistory }) // Envoi de l'historique
+        body: JSON.stringify({ messages: historyForAPI })
       });
       
       const data = await res.json();
 
+      // Remplacement du message de chargement par la vraie réponse
       setMessages(prev => prev.map((m, i) =>
         i === prev.length - 1 ? { role: "assistant", text: data.text } : m
       ));
     } catch (err) {
       setMessages(prev => prev.map((m, i) =>
-        i === prev.length - 1 ? { role: "assistant", text: "❌ Erreur de connexion." } : m
+        i === prev.length - 1 ? { role: "assistant", text: "❌ Erreur de connexion au serveur." } : m
       ));
     }
   };
@@ -92,10 +93,9 @@ export default function Home() {
         .app { position:relative; height:100vh; display:flex; flex-direction:column; font-family:'Segoe UI',Arial,sans-serif; color:white; overflow:hidden; }
         .welcome { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
         .logo { font-size:44px; font-weight:bold; background:linear-gradient(90deg,var(--c1),var(--c2)); -webkit-background-clip:text; color:transparent; }
-        .start-btn { margin-top:30px; padding:14px 34px; border:none; border-radius:30px; font-size:16px; cursor:pointer; background:linear-gradient(90deg,var(--c1),var(--c2)); color:white; transition: transform 0.2s; }
-        .start-btn:hover { transform: scale(1.05); }
+        .start-btn { margin-top:30px; padding:14px 34px; border:none; border-radius:30px; font-size:16px; cursor:pointer; background:linear-gradient(90deg,var(--c1),var(--c2)); color:white; }
         .chat { flex:1; display:flex; flex-direction:column; max-width:800px; margin:0 auto; width:100%; }
-        .messages { flex:1; padding:20px; overflow-y:auto; scrollbar-width: thin; }
+        .messages { flex:1; padding:20px; overflow-y:auto; }
         .msg { max-width:82%; margin-bottom:14px; padding:14px 18px; border-radius:16px; line-height:1.4; background: rgba(255,255,255,0.12); }
         .user { margin-left:auto; background:linear-gradient(90deg,#0066ff,#00ccff); border-bottom-right-radius:4px; }
         .assistant { margin-right:auto; background: rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.2); backdrop-filter:blur(6px); border-bottom-left-radius:4px; }
